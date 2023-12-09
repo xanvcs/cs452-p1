@@ -1,6 +1,11 @@
-# CS452 Project 1
+# Project
 
-- [Project Specification](https://shanepanter.com/cs452/projects/p1)
+Steps to configure, build, run, and test the project.
+
+## Important Links
+
+- [Projects](https://shanepanter.com/cs452/projects/)
+- [Google Test Framework](http://google.github.io/googletest/primer.html#simple-tests)
 
 ## Dependencies
 
