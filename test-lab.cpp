@@ -1,6 +1,11 @@
 #include "lab.h"
 #include <gtest/gtest.h>
 
+TEST(LeakTest, asan)
+{
+  char *version = getVersion();
+  ASSERT_STREQ("1.0", version);
+}
 
 TEST(SegFaultTest, asan)
 {
@@ -8,19 +13,7 @@ TEST(SegFaultTest, asan)
 }
 
 
-TEST(OutOfBoundsTest, fail)
+TEST(OutOfBoundsTest, asan)
 {
   outOfBounds();
-}
-
-TEST(LeakTest, fail)
-{
-  int *actual = leakyFunction(2);
-  ASSERT_EQ(2, *actual);
-  free(actual);
-}
-
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

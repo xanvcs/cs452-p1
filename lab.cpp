@@ -4,21 +4,11 @@
 #include <readline/readline.h>
 #include "lab.h"
 
-#define UNUSED(x) (void)(x)
-
 char *getVersion(void)
 {
   char *version = (char *)malloc(MAX_VERSION_STRING);
   snprintf(version, MAX_VERSION_STRING, "%d.%d", lab_VERSION_MAJOR, lab_VERSION_MINOR);
   return version;
-}
-
-int *leakyFunction(int a)
-{
-  int *rval = (int *)malloc(sizeof(int));
-  rval = (int *)malloc(sizeof(int));
-  *rval = a;
-  return rval;
 }
 
 int segfault(void)
