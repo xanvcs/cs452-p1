@@ -1,30 +1,28 @@
 #Make file to build an executable and a testing harness
 #using address sanitizer and google test
 
-ASAN ?= -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fno-omit-frame-pointer
-CPPFLAGS ?= -std=c++17 -Wall -O1 -g -MMD -MP
-LDFLAGS ?= -std=c++17 -pthread -lreadline
+ASAN ?= -fsanitize=address -fsanitize=bounds -fsanitize=undefined
+CPPFLAGS ?= -std=c++17 -Wall -Wextra -O1 -fno-omit-frame-pointer -g -MMD -MP
+LDFLAGS ?= -pthread -lreadline
+GTEST ?= -lgtest_main -lgtest
 UNAME_S := $(shell uname -s)
 
-ifeq ($(UNAME_S),Linux)
-GTEST ?= -lgtest_main -lgtest
-endif
 
 ifeq ($(UNAME_S),Darwin)
-INCLUDE ?= -I /opt/homebrew/include/
-GTEST ?= -L/opt/homebrew/lib/ -lgtest_main -lgtest
+MAC_INCLUDE ?= -I /opt/homebrew/include/
+MAC_LIB ?= -L/opt/homebrew/lib/
 endif
 
 %.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(ASAN) $(INCLUDE) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(ASAN) $(MAC_INCLUDE) -c $< -o $@
 
 all: myprogram test-lab
 
 myprogram: lab.o main.o
-	$(CXX) $(ASAN) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CPPFLAGS) $(ASAN) $(LDFLAGS) $^ -o $@
 
 test-lab: test-lab.o lab.o
-	$(CXX) $(ASAN) $(LDFLAGS) $(GTEST) $^ -o $@
+	$(CXX) $(CPPFLAGS) $(ASAN) $(LDFLAGS) $(MAC_LIB) $(GTEST) $^ -o $@
 
 check: test-lab
 	ASAN_OPTIONS=detect_leaks=1 ./$<

@@ -9,10 +9,9 @@ Steps to configure, build, run, and test the project.
 
 ## Dependencies
 
-- gtest
-- gtest-devel
-- readline
-- readline-devel
+- libasan libubsan
+- gtest gtest-devel
+- readline readline-devel
 
 ## Building
 
