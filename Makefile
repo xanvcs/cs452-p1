@@ -4,7 +4,7 @@
 ASAN ?= -fsanitize=address -fsanitize=bounds -fsanitize=undefined
 CPPFLAGS ?= -std=c++17 -Wall -Wextra -O1 -fno-omit-frame-pointer -g -MMD -MP
 LDFLAGS ?= -pthread -lreadline
-GTEST ?= -lgtest_main -lgtest
+GTEST ?= -lgtest
 UNAME_S := $(shell uname -s)
 
 
