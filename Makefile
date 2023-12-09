@@ -1,7 +1,7 @@
 #Make file to build an executable and a testing harness
 #using address sanitizer and google test
 
-ASAN ?= -fsanitize=address -fno-omit-frame-pointer
+ASAN ?= -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fno-omit-frame-pointer
 CPPFLAGS ?= -std=c++17 -Wall -O1 -g -MMD -MP
 LDFLAGS ?= -std=c++17 -pthread -lreadline
 UNAME_S := $(shell uname -s)
@@ -27,7 +27,7 @@ test-lab: test-lab.o lab.o
 	$(CXX) $(ASAN) $(LDFLAGS) $(GTEST) $^ -o $@
 
 check: test-lab
-	./$<
+	ASAN_OPTIONS=detect_leaks=1 ./$<
 
 .PHONY: clean
 clean:
