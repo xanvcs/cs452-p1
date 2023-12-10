@@ -39,7 +39,7 @@
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
-            "externalConsole": true,
+            "externalConsole": false,
             "osx": {
                 "MIMode": "lldb"
             },
