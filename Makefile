@@ -1,34 +1,50 @@
-#Make file to build an executable and a testing harness
-#using address sanitizer and google test
+TARGET_EXEC ?= myprogram
+TARGET_TEST ?= test-lab
 
-CPPFLAGS ?= -std=c++17 -Wall -Wextra -fno-omit-frame-pointer -g -MMD -MP
+BUILD_DIR ?= build
+TEST_DIR ?= tests
+SRC_DIR ?= src
+EXE_DIR ?= app
+
+SRCS := $(shell find $(SRC_DIR) -name *.c)
+OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
+DEPS := $(OBJS:.o=.d)
+
+TEST_SRCS := $(shell find $(TEST_DIR) -name *.c)
+TEST_OBJS := $(TEST_SRCS:%=$(BUILD_DIR)/%.o)
+TEST_DEPS := $(TEST_OBJS:.o=.d)
+
+EXE_SRCS := $(shell find $(EXE_DIR) -name *.c)
+EXE_OBJS := $(EXE_SRCS:%=$(BUILD_DIR)/%.o)
+EXE_DEPS := $(EXE_OBJS:.o=.d)
+
+CFLAGS ?= -Wall -Wextra -fno-omit-frame-pointer -fsanitize=address -g -MMD -MP
 LDFLAGS ?= -pthread -lreadline
-GTEST ?= -lgtest -lgtest_main
-UNAME_S := $(shell uname -s)
 
+all: $(TARGET_EXEC) $(TARGET_TEST)
 
-ifeq ($(UNAME_S),Darwin)
-MAC_INCLUDE ?= -I /opt/homebrew/include/
-MAC_LIB ?= -L/opt/homebrew/lib/
-endif
+$(TARGET_EXEC): $(OBJS) $(EXE_OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(EXE_OBJS) -o $@ $(LDFLAGS)
 
-%.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(MAC_INCLUDE) -c $< -o $@
+$(TARGET_TEST): $(OBJS) $(TEST_OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(TEST_OBJS)  -o $@ $(LDFLAGS)
 
-all: myprogram test-lab
+$(BUILD_DIR)/%.c.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-myprogram: lab.o main.o
-	$(CXX) $ (CPPFLAGS) $(LDFLAGS) $^ -o $@
-
-test-lab: lab.o test-lab.o
-	$(CXX) $(CPPFLAGS) $(ASAN)  $(LDFLAGS) $(MAC_LIB)  $^ -o $@ $(GTEST)
-
-
-check: test-lab
+check: $(TARGET_TEST)
 	ASAN_OPTIONS=detect_leaks=1 ./$<
 
 .PHONY: clean
 clean:
-	$(RM) *.o *.d myprogram test-lab
+	$(RM) -rf $(BUILD_DIR) $(TARGET_EXEC) $(TARGET_TEST)
 
--include lab.d test-lab.d
+# Install the libs needed to use git send-email on codespaces
+.PHONY: install-deps
+setup:
+	sudo apt-get update -y
+	sudo apt-get install -y libio-socket-ssl-perl libmime-tools-perl
+
+
+-include $(DEPS) $(TEST_DEPS) $(EXE_DEPS)

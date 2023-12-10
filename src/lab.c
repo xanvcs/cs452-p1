@@ -14,7 +14,7 @@ char *getVersion(void)
 int segfault(void)
 {
   // add volatile because clang will optimize out the segfault
-  volatile int *foo = nullptr;
+  volatile int *foo = NULL;
   int bar = *foo;
   return bar;
 }

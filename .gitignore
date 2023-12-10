@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 /test-lab
 /myprogram
+/build
+/.vscode/c_cpp_properties.json

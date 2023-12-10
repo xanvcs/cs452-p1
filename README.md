@@ -1,17 +1,6 @@
-# Project
+# Makefile Project Template
 
 Steps to configure, build, run, and test the project.
-
-## Important Links
-
-- [Projects](https://shanepanter.com/cs452/projects/)
-- [Google Test Framework](http://google.github.io/googletest/primer.html#simple-tests)
-
-## Dependencies
-
-- libasan libubsan
-- gtest gtest-devel
-- readline readline-devel
 
 ## Building
 
@@ -29,4 +18,12 @@ make check
 
 ```bash
 make clean
+```
+
+## Install Dependencies
+
+In order to use git send-mail you need to run the following command:
+
+```bash
+make install-deps
 ```
