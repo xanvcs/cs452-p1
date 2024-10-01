@@ -7,6 +7,7 @@
 #include <readline/history.h>
 #include <signal.h>
 #include <pwd.h>
+#include <sys/wait.h>
 
 char *get_prompt(const char *env) {
     const char *prompt_env = getenv(env);
@@ -58,9 +59,63 @@ int change_dir(char **dir) {
     return 0;
 }
 
-char **cmd_parse(char const *line);
+char **cmd_parse(char const *line) {
+    char **argv;
+    char *token;
 
-void cmd_free(char **line);
+    long max_args = sysconf(_SC_ARG_MAX);
+    if (max_args == -1) {
+        perror("sysconf");
+        return NULL;
+    }
+
+    argv = malloc((max_args + 1) * sizeof(char *));
+    if (argv == NULL) {
+        perror("malloc");
+        return NULL;
+    }
+
+    char *line_copy = strdup(line);
+    if (line_copy == NULL) {
+        perror("strdup");
+        free(argv);
+        return NULL;
+    }
+
+    token = strtok(line_copy, " ");
+    int argc = 0;
+    while (token != NULL && argc < max_args) {
+        argv[argc] = strdup(token);
+        if (argv[argc] == NULL) {
+            perror("strdup");
+
+            for (int i = 0; i < argc; i++) {
+                free(argv[i]);
+            }
+            cmd_free(argv);
+            free(line_copy);
+            return NULL;
+        }
+        argc++;
+        token = strtok(NULL, " ");
+    }
+
+    argv[argc] = NULL;
+    free(line_copy);
+    return argv;
+}
+
+void cmd_free(char **line) {
+    if (line == NULL) {
+        return;
+    }
+
+    for (int i = 0; line[i] != NULL; i++) {
+        free(line[i]);
+    }
+
+    free(line);
+}
 
 char *trim_white(char *line);
 
@@ -92,7 +147,20 @@ bool do_builtin(struct shell *sh, char **argv) {
         return true;
     }
 
-    return false;
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("fork");
+        return false;
+    } else if (pid == 0) {
+        execvp(argv[0], argv);
+        perror("execvp");
+        exit(1);
+    } else {
+        int status;
+        waitpid(pid, &status, 0);
+        return true;
+    }
 }
 
 void sh_init(struct shell *sh) {

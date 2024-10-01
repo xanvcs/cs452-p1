@@ -5,27 +5,40 @@
 #include <readline/history.h>
 #include "../src/lab.h"
 
-int main(int argc, char **argv)
-{
-  parse_args(argc, argv);
+int main(int argc, char **argv) {
+    parse_args(argc, argv);
 
-  char *prompt = get_prompt("MY_PROMPT");
-  if (prompt == NULL) {
-      fprintf(stderr, "Failed to get prompt\n");
-      return 1;
-  }
+    struct shell *sh = malloc(sizeof(struct shell));
+    if (sh == NULL) {
+        fprintf(stderr, "Failed to allocate memory for shell\n");
+        return 1;
+    }
 
-  using_history();
-  char *line;
+    sh_init(sh);
 
-  while ((line = readline(prompt))) {
-      if (strlen(line) > 0) {
-          add_history(line);
-          printf("%s\n", line);
-      }
-      free(line);
-  }
+    char *prompt = get_prompt("MY_PROMPT");
+    if (prompt == NULL) {
+        fprintf(stderr, "Failed to get prompt\n");
+        sh_destroy(sh);
+        return 1;
+    }
 
-  free(prompt);
-  return 0;
+    using_history();
+    char *line;
+
+    while ((line = readline(prompt))) {
+        if (strlen(line) > 0) {
+            add_history(line);
+            char **args = cmd_parse(line);
+            if (args != NULL) {
+                do_builtin(sh, args);
+                cmd_free(args);
+            }
+        }
+        free(line);
+    }
+
+    free(prompt);
+    sh_destroy(sh);
+    return 0;
 }
