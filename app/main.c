@@ -44,5 +44,6 @@ int main(int argc, char **argv) {
 
     free(prompt);
     sh_destroy(sh);
+    clear_history();
     return 0;
 }
