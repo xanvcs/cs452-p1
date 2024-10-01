@@ -153,12 +153,28 @@ bool do_builtin(struct shell *sh, char **argv) {
         perror("fork");
         return false;
     } else if (pid == 0) {
+        pid_t child = getpid();
+        setpgid(child, child);
+        tcsetpgrp(sh->shell_terminal, child);
+
+        signal(SIGINT, SIG_DFL);
+        signal(SIGQUIT, SIG_DFL);
+        signal(SIGTSTP, SIG_DFL);
+        signal(SIGTTIN, SIG_DFL);
+        signal(SIGTTOU, SIG_DFL);
+
         execvp(argv[0], argv);
-        perror("execvp");
+        fprintf(stderr, "exec failed\n");
         exit(1);
     } else {
+        setpgid(pid, pid);
+        tcsetpgrp(sh->shell_terminal, pid);
+
         int status;
-        waitpid(pid, &status, 0);
+        waitpid(pid, &status, WUNTRACED);
+
+        tcsetpgrp(sh->shell_terminal, sh->shell_pgid);
+
         return true;
     }
 }
@@ -173,6 +189,12 @@ void sh_init(struct shell *sh) {
             kill(-sh->shell_pgid, SIGTTIN);
         }
         tcgetattr(sh->shell_terminal, &sh->shell_tmodes);
+
+        signal(SIGINT, SIG_IGN);
+        signal(SIGQUIT, SIG_IGN);
+        signal(SIGTSTP, SIG_IGN);
+        signal(SIGTTIN, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
     }
 
     using_history();
