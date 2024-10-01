@@ -79,8 +79,10 @@ int change_dir(char **dir) {
 }
 
 char **cmd_parse(char const *line) {
-    char **argv;
+    char **argv = NULL;
     char *token;
+    char *line_copy = NULL;
+    int argc = 0;
 
     long max_args = sysconf(_SC_ARG_MAX);
     if (max_args == -1) {
@@ -94,7 +96,7 @@ char **cmd_parse(char const *line) {
         return NULL;
     }
 
-    char *line_copy = strdup(line);
+    line_copy = strdup(line);
     if (line_copy == NULL) {
         perror("strdup");
         free(argv);
@@ -104,16 +106,14 @@ char **cmd_parse(char const *line) {
     trim_white(line_copy);
 
     token = strtok(line_copy, " ");
-    int argc = 0;
     while (token != NULL && argc < max_args) {
         argv[argc] = strdup(token);
         if (argv[argc] == NULL) {
             perror("strdup");
-
             for (int i = 0; i < argc; i++) {
                 free(argv[i]);
             }
-            cmd_free(argv);
+            free(argv);
             free(line_copy);
             return NULL;
         }
