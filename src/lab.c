@@ -9,6 +9,24 @@
 #include <pwd.h>
 #include <sys/wait.h>
 
+#define MAX_JOBS 100
+
+struct job {
+    int job_number;
+    pid_t pid;
+    char *command;
+    int status;
+};
+
+struct job jobs[MAX_JOBS];
+int next_job_number = 1;
+
+void update_job_status(pid_t pid);
+void print_jobs();
+void add_job(pid_t pid, int job_number, char **argv);
+void check_background_processes();
+void remove_completed_jobs();
+
 char *get_prompt(const char *env) {
     const char *prompt_env = getenv(env);
     char *prompt;
@@ -147,7 +165,21 @@ bool do_builtin(struct shell *sh, char **argv) {
         return true;
     }
 
+    if (strcmp(argv[0], "jobs") == 0) {
+        print_jobs();
+        return true;
+    }
+
     pid_t pid = fork();
+    int background = 0;
+    
+    for (int i = 0; argv[i] != NULL; i++) {
+        if (argv[i+1] == NULL && strcmp(argv[i], "&") == 0) {
+            background = 1;
+            argv[i] = NULL;
+            break;
+        }
+    }
 
     if (pid == -1) {
         perror("fork");
@@ -155,7 +187,10 @@ bool do_builtin(struct shell *sh, char **argv) {
     } else if (pid == 0) {
         pid_t child = getpid();
         setpgid(child, child);
-        tcsetpgrp(sh->shell_terminal, child);
+        
+        if (!background) {
+            tcsetpgrp(sh->shell_terminal, child);
+        }
 
         signal(SIGINT, SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
@@ -168,12 +203,17 @@ bool do_builtin(struct shell *sh, char **argv) {
         exit(1);
     } else {
         setpgid(pid, pid);
-        tcsetpgrp(sh->shell_terminal, pid);
-
-        int status;
-        waitpid(pid, &status, WUNTRACED);
-
-        tcsetpgrp(sh->shell_terminal, sh->shell_pgid);
+        
+        if (!background) {
+            tcsetpgrp(sh->shell_terminal, pid);
+            int status;
+            waitpid(pid, &status, WUNTRACED);
+            tcsetpgrp(sh->shell_terminal, sh->shell_pgid);
+        } else {
+            add_job(pid, next_job_number, argv);
+            printf("[%d] %d\n", next_job_number, pid);
+            next_job_number++;
+        }
 
         return true;
     }
@@ -198,6 +238,11 @@ void sh_init(struct shell *sh) {
     }
 
     using_history();
+
+    for (int i = 0; i < MAX_JOBS; i++) {
+        jobs[i].pid = 0;
+        jobs[i].command = NULL;
+    }
 }
 
 void sh_destroy(struct shell *sh) {
@@ -220,6 +265,77 @@ void parse_args(int argc, char **argv) {
             default:
                 fprintf(stderr, "Usage: %s [-v]\n", argv[0]);
                 exit(1);
+        }
+    }
+}
+
+void check_background_processes() {
+    int status;
+    pid_t pid;
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        update_job_status(pid);
+    }
+}
+
+void print_jobs() {
+    int jobs_found = 0;
+    for (int i = 0; i < MAX_JOBS; i++) {
+        if (jobs[i].pid != 0) {
+            jobs_found = 1;
+            if (jobs[i].status == 0) {
+                if (kill(jobs[i].pid, 0) == 0) {
+                    printf("[%d] %d Running %s\n", jobs[i].job_number, jobs[i].pid, jobs[i].command);
+                } else {
+                    printf("[%d] Done    %s\n", jobs[i].job_number, jobs[i].command);
+                    jobs[i].status = 1;
+                }
+            } else {
+                printf("[%d] Done    %s\n", jobs[i].job_number, jobs[i].command);
+            }
+        }
+    }
+    if (!jobs_found) {
+        printf("No active jobs\n");
+    }
+}
+
+void add_job(pid_t pid, int job_number, char **argv) {
+    for (int i = 0; i < MAX_JOBS; i++) {
+        if (jobs[i].pid == 0) {
+            jobs[i].job_number = job_number;
+            jobs[i].pid = pid;
+            jobs[i].status = 0;
+            
+            char command[1024] = "";
+            for (int j = 0; argv[j] != NULL; j++) {
+                strcat(command, argv[j]);
+                strcat(command, " ");
+            }
+            strcat(command, "&");
+            jobs[i].command = strdup(command);
+            
+            break;
+        }
+    }
+}
+
+void update_job_status(pid_t pid) {
+    for (int i = 0; i < MAX_JOBS; i++) {
+        if (jobs[i].pid == pid) {
+            jobs[i].status = 1;
+            break;
+        }
+    }
+}
+
+void remove_completed_jobs() {
+    for (int i = 0; i < MAX_JOBS; i++) {
+        if (jobs[i].pid != 0 && jobs[i].status == 1) {
+            free(jobs[i].command);
+            jobs[i].pid = 0;
+            jobs[i].command = NULL;
+            jobs[i].status = 0;
         }
     }
 }

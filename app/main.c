@@ -5,6 +5,8 @@
 #include <readline/history.h>
 #include "../src/lab.h"
 
+void check_background_processes(void);
+
 int main(int argc, char **argv) {
     parse_args(argc, argv);
 
@@ -27,6 +29,7 @@ int main(int argc, char **argv) {
     char *line;
 
     while ((line = readline(prompt))) {
+        check_background_processes();
         if (strlen(line) > 0) {
             add_history(line);
             char **args = cmd_parse(line);
