@@ -79,51 +79,84 @@ int change_dir(char **dir) {
 }
 
 char **cmd_parse(char const *line) {
-    char **argv = NULL;
-    char *token;
-    char *line_copy = NULL;
-    int argc = 0;
-
-    long max_args = sysconf(_SC_ARG_MAX);
-    if (max_args == -1) {
-        perror("sysconf");
+    if (line == NULL) {
         return NULL;
     }
 
-    argv = malloc((max_args + 1) * sizeof(char *));
-    if (argv == NULL) {
-        perror("malloc");
+    char *trimmed_line = strdup(line);
+    if (trimmed_line == NULL) {
+        return NULL;
+    }
+    trim_white(trimmed_line);
+
+    int arg_count = 0;
+    char *ptr = trimmed_line;
+    int in_quotes = 0;
+
+    while (*ptr) {
+        if (*ptr == '"') {
+            in_quotes = !in_quotes;
+        } else if (!isspace((unsigned char)*ptr) && (ptr == trimmed_line || isspace((unsigned char)*(ptr-1)) || *(ptr-1) == '"')) {
+            arg_count++;
+        }
+        ptr++;
+    }
+
+    char **args = malloc((arg_count + 1) * sizeof(char *));
+    if (args == NULL) {
+        free(trimmed_line);
         return NULL;
     }
 
-    line_copy = strdup(line);
-    if (line_copy == NULL) {
-        perror("strdup");
-        free(argv);
-        return NULL;
-    }
+    int arg_index = 0;
+    ptr = trimmed_line;
+    char *arg_start = ptr;
+    in_quotes = 0;
 
-    trim_white(line_copy);
-
-    token = strtok(line_copy, " ");
-    while (token != NULL && argc < max_args) {
-        argv[argc] = strdup(token);
-        if (argv[argc] == NULL) {
-            perror("strdup");
-            for (int i = 0; i < argc; i++) {
-                free(argv[i]);
+    while (*ptr) {
+        if (*ptr == '"') {
+            in_quotes = !in_quotes;
+        } else if (isspace((unsigned char)*ptr) && !in_quotes) {
+            if (arg_start != ptr) {
+                int arg_len = ptr - arg_start;
+                args[arg_index] = malloc((arg_len + 1) * sizeof(char));
+                if (args[arg_index] == NULL) {
+                    for (int i = 0; i < arg_index; i++) {
+                        free(args[i]);
+                    }
+                    free(args);
+                    free(trimmed_line);
+                    return NULL;
+                }
+                strncpy(args[arg_index], arg_start, arg_len);
+                args[arg_index][arg_len] = '\0';
+                arg_index++;
             }
-            free(argv);
-            free(line_copy);
+            arg_start = ptr + 1;
+        }
+        ptr++;
+    }
+
+    if (arg_start != ptr) {
+        int arg_len = ptr - arg_start;
+        args[arg_index] = malloc((arg_len + 1) * sizeof(char));
+        if (args[arg_index] == NULL) {
+            for (int i = 0; i < arg_index; i++) {
+                free(args[i]);
+            }
+            free(args);
+            free(trimmed_line);
             return NULL;
         }
-        argc++;
-        token = strtok(NULL, " ");
+        strncpy(args[arg_index], arg_start, arg_len);
+        args[arg_index][arg_len] = '\0';
+        arg_index++;
     }
 
-    argv[argc] = NULL;
-    free(line_copy);
-    return argv;
+    args[arg_index] = NULL;
+
+    free(trimmed_line);
+    return args;
 }
 
 void cmd_free(char **line) {
