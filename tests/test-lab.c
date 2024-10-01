@@ -4,11 +4,15 @@
 
 
 void setUp(void) {
-  // set stuff up here
+    setenv("MY_PROMPT", "test_prompt>", 1);
+
+    chdir("/tmp");
 }
 
 void tearDown(void) {
-  // clean stuff up here
+    unsetenv("MY_PROMPT");
+
+    chdir("/");
 }
 
 
