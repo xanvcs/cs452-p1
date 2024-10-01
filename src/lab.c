@@ -1,7 +1,18 @@
 #include "lab.h"
 #include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
-char *get_prompt(const char *env);
+char *get_prompt(const char *env) {
+    char *line;
+    using_history();
+
+    while ((line = readline("$"))) {
+        printf("%s\n", line);
+        add_history(line);
+        free(line);
+    }
+}
 
 int change_dir(char **dir);
 
