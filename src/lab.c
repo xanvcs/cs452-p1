@@ -36,7 +36,7 @@ char *get_prompt(const char *env) {
     if (prompt_env != NULL) {
         prompt_length = strlen(prompt_env) + 1;
     } else {
-        const char *default_prompt = "shell> ";
+        const char *default_prompt = "shell>";
         prompt_length = strlen(default_prompt) + 1;
         prompt_env = default_prompt;
     }
@@ -56,7 +56,7 @@ char *get_prompt(const char *env) {
 int change_dir(char **dir) {
     const char *new_dir;
 
-    if (dir[0] == NULL) {
+    if (dir[1] == NULL) {
         new_dir = getenv("HOME");
         if (new_dir == NULL) {
             struct passwd *pw = getpwuid(getuid());
@@ -67,7 +67,7 @@ int change_dir(char **dir) {
             new_dir = pw->pw_dir;
         }
     } else {
-        new_dir = dir[0];
+        new_dir = dir[1];
     }
 
     if (chdir(new_dir) != 0) {
@@ -178,7 +178,7 @@ bool do_builtin(struct shell *sh, char **argv) {
     }
 
     if (strcmp(argv[0], "cd") == 0) {
-        return change_dir(argv + 1);
+        return change_dir(argv);
     }
 
     if (strcmp(argv[0], "history") == 0) {
