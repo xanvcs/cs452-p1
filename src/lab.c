@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <pwd.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #define MAX_JOBS 100
 
@@ -100,6 +101,8 @@ char **cmd_parse(char const *line) {
         return NULL;
     }
 
+    trim_white(line_copy);
+
     token = strtok(line_copy, " ");
     int argc = 0;
     while (token != NULL && argc < max_args) {
@@ -135,7 +138,33 @@ void cmd_free(char **line) {
     free(line);
 }
 
-char *trim_white(char *line);
+char *trim_white(char *line) {
+    if (line == NULL) {
+        return NULL;
+    }
+
+    char *start = line;
+    while (*start && isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    if (*start == '\0') {
+        *line = '\0';
+        return line;
+    }
+
+    char *end = start + strlen(start) - 1;
+    while (end > start && isspace((unsigned char)*end)) {
+        end--;
+    }
+    *(end + 1) = '\0';
+
+    if (start != line) {
+        memmove(line, start, (end - start + 2) * sizeof(char));
+    }
+
+    return line;
+}
 
 bool do_builtin(struct shell *sh, char **argv) {
     if (argv[0] == NULL) {

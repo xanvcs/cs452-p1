@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
 
     while ((line = readline(prompt))) {
         check_background_processes();
+        trim_white(line);
         if (strlen(line) > 0) {
             add_history(line);
             char **args = cmd_parse(line);
