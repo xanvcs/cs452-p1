@@ -112,6 +112,7 @@ char **cmd_parse(char const *line) {
             for (int i = 0; i < argc; i++) {
                 free(argv[i]);
             }
+            free(argv);
             cmd_free(argv);
             free(line_copy);
             return NULL;
