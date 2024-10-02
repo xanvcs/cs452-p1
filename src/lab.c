@@ -273,11 +273,23 @@ void sh_init(struct shell *sh) {
     }
 }
 
+void remove_all_jobs() {
+    for (int i = 0; i < MAX_JOBS; i++) {
+        if (jobs[i].command != NULL) {
+            free(jobs[i].command);
+            jobs[i].command = NULL;
+        }
+        jobs[i].pid = 0;
+        jobs[i].status = 0;
+    }
+}
+
 void sh_destroy(struct shell *sh) {
     if (sh != NULL) {
         if (sh->prompt != NULL) {
             free(sh->prompt);
         }
+        remove_all_jobs();
         free(sh);
     }
 }
