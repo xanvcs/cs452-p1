@@ -113,7 +113,6 @@ char **cmd_parse(char const *line) {
                 free(argv[i]);
             }
             free(argv);
-            cmd_free(argv);
             free(line_copy);
             return NULL;
         }
