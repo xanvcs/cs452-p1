@@ -112,7 +112,7 @@ char **cmd_parse(char const *line) {
             for (int i = 0; i < argc; i++) {
                 free(argv[i]);
             }
-            free(argv);
+            cmd_free(argv);
             free(line_copy);
             return NULL;
         }
@@ -227,7 +227,7 @@ bool do_builtin(struct shell *sh, char **argv) {
         signal(SIGTTOU, SIG_DFL);
 
         execvp(argv[0], argv);
-        fprintf(stderr, "exec failed: %s\n", argv[0]);
+        fprintf(stderr, "exec failed\n");
         exit(1);
     } else {
         setpgid(pid, pid);
@@ -237,12 +237,6 @@ bool do_builtin(struct shell *sh, char **argv) {
             int status;
             waitpid(pid, &status, WUNTRACED);
             tcsetpgrp(sh->shell_terminal, sh->shell_pgid);
-
-            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-                add_job(pid, next_job_number, argv);
-                printf("[%d] %d\n", next_job_number, pid);
-                next_job_number++;
-            }
         } else {
             add_job(pid, next_job_number, argv);
             printf("[%d] %d\n", next_job_number, pid);
@@ -365,18 +359,11 @@ void update_job_status(pid_t pid) {
 
 void remove_completed_jobs() {
     for (int i = 0; i < MAX_JOBS; i++) {
-        if (jobs[i].pid != 0) {
-            int status;
-            pid_t result = waitpid(jobs[i].pid, &status, WNOHANG);
-            if (result == jobs[i].pid) {
-                if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                    printf("[%d] Done    %s\n", jobs[i].job_number, jobs[i].command);
-                    free(jobs[i].command);
-                    jobs[i].pid = 0;
-                    jobs[i].command = NULL;
-                    jobs[i].status = 0;
-                }
-            }
+        if (jobs[i].pid != 0 && jobs[i].status == 1) {
+            free(jobs[i].command);
+            jobs[i].pid = 0;
+            jobs[i].command = NULL;
+            jobs[i].status = 0;
         }
     }
 }
