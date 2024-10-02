@@ -4,15 +4,15 @@
 
 
 void setUp(void) {
-    setenv("MY_PROMPT", "test_prompt>", 1);
-
-    chdir("/tmp");
+     // set stuff up here
 }
 
 void tearDown(void) {
-    unsetenv("MY_PROMPT");
+     // clean stuff up here
+}
 
-    chdir("/");
+void test_stuff(void) {
+     // test stuff here
 }
 
 
@@ -39,6 +39,9 @@ void test_cmd_parse2(void)
      free(expected[0]);
      free(expected[1]);
      free(expected);
+     
+     free(stng);
+     cmd_free(actual);
 }
 
 void test_cmd_parse(void)
